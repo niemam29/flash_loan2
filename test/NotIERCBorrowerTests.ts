@@ -11,7 +11,7 @@ let owner: SignerWithAddress,
   TokenAContract,
   TokenA: Contract
 
-describe('Borrowing Loans - invalid allowance tests', function () {
+describe('Borrowing Loans - invalid interface tests', function () {
   before(async function () {
     ;[owner, user] = await ethers.getSigners()
 
