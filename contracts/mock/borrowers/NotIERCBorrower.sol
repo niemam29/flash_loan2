@@ -9,19 +9,19 @@ IERC3156FlashLender lender;
         lender = _lender;
     }
 
-    function onFlashLoan(
+    function onLoan(
+        uint256 amount,
         address sender,
         address token,
-        uint256 amount,
         uint256 fee,
-        bytes calldata data,
-        uint256 extra
+        bytes calldata data
     ) external returns (bytes32) {
-//        lender.flashLoan(IERC3156FlashBorrower(address(this)), token, amount, '');
         return keccak256('ERC3156FlashBorrower.onFlashLoan');
     }
     function borrow(address token, uint256 amount) external {
         uint fee = lender.flashFee(token, amount);
         lender.flashLoan(IERC3156FlashBorrower(address(this)), token, amount, '');
     }
+    fallback() external {  }
+
 }
