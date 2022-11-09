@@ -26,7 +26,7 @@ describe('Borrowing Loans - Reentrancy borrower', function () {
     TokenA.transfer(ReentrancyBorrower.address, 100)
   })
   it('Should revert reentrancy borrower', async function () {
-    await expect(ReentrancyBorrower.borrow(TokenA.address, 10000)).to.be.revertedWith('FlashLoan: Locked')
+    await expect(ReentrancyBorrower.borrow(TokenA.address, 10000)).to.be.revertedWith('ReentrancyGuard: reentrant call')
     expect(await TokenA.balanceOf(user.address)).to.be.eq(0)
     expect(await TokenA.balanceOf(ReentrancyBorrower.address)).to.be.eq(100)
   })

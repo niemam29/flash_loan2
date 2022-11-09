@@ -5,11 +5,12 @@ import './interfaces/IERC3156FlashBorrower.sol';
 import './interfaces/IERC3156FlashLender.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
-contract FlashLoan is IERC3156FlashLender {
+contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
+    bytes32 constant expectedHash = keccak256('ERC3156FlashBorrower.onFlashLoan');
     using SafeERC20 for ERC20;
     ERC20 supportedToken;
-    using SafeERC20 for ERC20;
     uint feeDenominator = 100; // 1% fee
     bool locked = false;
 
@@ -17,30 +18,22 @@ contract FlashLoan is IERC3156FlashLender {
         supportedToken = _supportedToken;
     }
 
-    modifier onlyUnlocked() {
-        require(!locked, 'FlashLoan: Locked');
-        _;
-    }
-
     function flashLoan(
         IERC3156FlashBorrower receiver,
         address token,
         uint256 amount,
         bytes calldata data
-    ) external onlyUnlocked returns (bool) {
-        locked = true;
+    ) external nonReentrant returns (bool) {
         require(token == address(supportedToken), 'Token not supported');
 
         supportedToken.safeTransfer(address(receiver), amount);
 
         require(
-            receiver.onFlashLoan(msg.sender, token, amount, feeDenominator, data) ==
-                keccak256('ERC3156FlashBorrower.onFlashLoan'),
+            receiver.onFlashLoan(msg.sender, token, amount, feeDenominator, data) == expectedHash,
             'Flash loan failed'
         );
 
         supportedToken.safeTransferFrom(address(receiver), address(this), amount + flashFee(token, amount));
-        locked = false;
         return true;
     }
 
