@@ -11,7 +11,7 @@ let owner: SignerWithAddress,
   TokenAContract,
   TokenA: Contract
 
-describe('Borrowing Loans', function () {
+describe('Borrowing Loans - Reentrancy borrower', function () {
   before(async function () {
     ;[owner, user] = await ethers.getSigners()
 
