@@ -4,14 +4,17 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../../interfaces/IERC3156FlashBorrower.sol';
 import '../../interfaces/IERC3156FlashLender.sol';
+import '../../interfaces/ILiquidityPool.sol';
+import 'hardhat/console.sol';
 
 contract RegularBorrower is IERC3156FlashBorrower {
     using SafeERC20 for IERC20;
     IERC3156FlashLender lender;
+    ILiquidityPool lp;
     address receiver;
 
-    constructor(IERC3156FlashLender _lender, address _receiver) {
-        lender = _lender;
+    constructor(address _liquidityPool , address _receiver) {
+        lp = ILiquidityPool(_liquidityPool);
         receiver = _receiver;
     }
 
@@ -27,8 +30,8 @@ contract RegularBorrower is IERC3156FlashBorrower {
     }
 
     function borrow(address token, uint256 amount) external {
-        uint fee = lender.flashFee(token, amount);
-        IERC20(token).approve(address(lender), amount + fee);
-        lender.flashLoan(this, token, amount, '');
+        uint fee = IERC3156FlashLender(lp.getLender()).flashFee(token, amount);
+        IERC20(token).safeApprove(address(lp.getLender()), amount + fee);
+        lp.useLiquidity(this, amount);
     }
 }
