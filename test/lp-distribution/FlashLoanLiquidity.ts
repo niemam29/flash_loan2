@@ -13,7 +13,7 @@ let owner: SignerWithAddress,
     TokenAContract,
     TokenA: Contract
 
-describe.only('Borrowing Loans with lp - Regular borrower', function () {
+describe('Borrowing Loans with lp - Regular borrower', function () {
     before(async function () {
         ;[owner, user] = await ethers.getSigners()
 
