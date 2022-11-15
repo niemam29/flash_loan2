@@ -12,7 +12,9 @@ let owner: SignerWithAddress,
     TokenAContract,
     TokenA: Contract
 
-describe.only('LP Token', function () {
+
+// TODO - Better tests - focus on unusual rates
+describe('LP Token', function () {
     before(async function () {
         ;[owner, user1, user2, user3, user4] = await ethers.getSigners()
 
@@ -113,5 +115,25 @@ describe.only('LP Token', function () {
         expect(await TokenA.balanceOf(user1.address)).to.be.eq(283333)
         expect(await TokenA.balanceOf(user2.address)).to.be.eq(141666)
         expect(await TokenA.balanceOf(user3.address)).to.be.eq(91666)
+    })
+    it('Should withdraw all of user tokens', async function () {
+        await LpToken.connect(user1).withdrawTo(user1.address, 100000)
+        expect(await TokenA.balanceOf(user1.address)).to.be.eq(383333)
+    })
+    it('Should not let user without lp tokens collect rewards', async function () {
+        await LpToken.connect(user1).collectRewards(user1.address)
+        expect(await TokenA.balanceOf(user1.address)).to.be.eq(383333)
+    })
+
+    it('Should distribute rewards in 1/1 proportions', async function () {
+        TokenA.transfer(LpToken.address, 100000)
+
+        await LpToken.connect(user1).collectRewards(user1.address)
+        await LpToken.connect(user2).collectRewards(user2.address)
+        await LpToken.connect(user3).collectRewards(user3.address)
+
+        expect(await TokenA.balanceOf(user1.address)).to.be.eq(383333)
+        expect(await TokenA.balanceOf(user2.address)).to.be.eq(191666)
+        expect(await TokenA.balanceOf(user3.address)).to.be.eq(141666)
     })
 })

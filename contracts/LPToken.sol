@@ -65,4 +65,8 @@ contract LPToken is ERC20Wrapper, Ownable {
             collectRewards(to);
         }
     }
+
+    function usePool(address to, uint amount) external onlyOwner {
+        rewardToken.approve(to, amount);
+    }
 }

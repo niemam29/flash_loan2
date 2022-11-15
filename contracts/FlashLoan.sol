@@ -16,9 +16,9 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
     uint feeDenominator = 100; // 1% fee
     bool locked = false;
 
-    constructor(address _supportedToken, address _liquidityPool) {
+    constructor(address _supportedToken) {
         supportedToken = ERC20(_supportedToken);
-        liquidityPool = LiquidityPool(_liquidityPool);
+        liquidityPool = new LiquidityPool(supportedToken);
     }
 
     function flashLoan(
@@ -28,26 +28,32 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
         bytes calldata data
     ) external nonReentrant returns (bool) {
         require(token == address(supportedToken), 'Token not supported');
+        require(amount <= liquidityPool.maxLiquidity(), 'Not enough liquidity');
 
-        supportedToken.safeTransferFrom(address(liquidityPool),address(receiver), amount);
+        liquidityPool.useLiquidity(this, amount); //TODO Find better way to do this
+        supportedToken.safeTransferFrom(address (liquidityPool),address(receiver), amount);
 
         require(
             receiver.onFlashLoan(msg.sender, token, amount, feeDenominator, data) == expectedHash,
             'Flash loan failed'
         );
 
-        supportedToken.safeTransferFrom(address(receiver), address(liquidityPool), amount + flashFee(token, amount));
+        supportedToken.safeTransferFrom(address(receiver), liquidityPool.getToken(), amount + flashFee(token, amount));
         return true;
     }
 
     function maxFlashFloan(address token) external view returns (uint256) {
         require(token == address(supportedToken), 'Token not supported');
-        return ERC20(token).balanceOf(address(liquidityPool));
+        return liquidityPool.maxLiquidity();
     }
 
     function flashFee(address token, uint256 amount) public view returns (uint256) {
         require(token == address(supportedToken), 'Token not supported');
         require(amount >= feeDenominator, 'Flash fee is not calculable - try bigger amount');
         return amount / feeDenominator;
+    }
+
+    function getLiquidityPool() public view returns (address) {
+        return address(liquidityPool);
     }
 }
