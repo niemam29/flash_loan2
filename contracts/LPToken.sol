@@ -11,9 +11,8 @@ contract LPToken is ERC20Wrapper, Ownable {
     using SafeERC20 for IERC20;
     IERC20 rewardToken;
     uint rewardPerShare;
-    uint previousRewardBalance;
-    uint claimedAmount;
-    uint depositAmount;
+    uint depositSnap;
+    uint balanceSnap;
     uint previousDepositAmount;
     mapping(address => uint) public stakeAddressAmount;
     mapping(address => uint) public stakeAddressSnapshot;
@@ -22,16 +21,15 @@ contract LPToken is ERC20Wrapper, Ownable {
 
     constructor(IERC20 _token) ERC20Wrapper(_token) ERC20('LPToken', 'LPT') {
         rewardPerShare = 0;
-        depositAmount = 0;
         rewardToken = _token;
-        claimedAmount = 0;
         previousDepositAmount = 0;
+        depositSnap = 0;
+        balanceSnap = 0;
     }
 
     function depositFor(address account, uint256 amount) public override returns (bool) {
-        stakeAddressAmount[account] = amount;
+        stakeAddressAmount[account] += amount;
         stakeAddressSnapshot[account] = rewardPerShare;
-        depositAmount += amount;
         super.depositFor(account, amount);
         return true;
     }
@@ -43,38 +41,28 @@ contract LPToken is ERC20Wrapper, Ownable {
         return true;
     }
 
-
     function distributeReward(uint reward) internal {
         require(this.totalSupply() > 0, 'this.totalSupply() is zero');
         rewardPerShare += (reward * STAKE_DENOMINATOR) / this.totalSupply(); // INVESTIGATE - 6 DECIMALS
     }
 
     function collectRewards(address to) public {
-        if (previousDepositAmount == 0) {
-            previousDepositAmount = depositAmount;
+        uint rew = (rewardToken.balanceOf(address(this)) - this.totalSupply()) - (balanceSnap - depositSnap);
+        if (rew > 0) {
+            distributeReward(rew);
         }
-
-        if((rewardToken.balanceOf(address(this)) > ( claimedAmount + previousDepositAmount))) {
-            distributeReward(rewardToken.balanceOf(address(this)) - claimedAmount - previousDepositAmount);
-            previousDepositAmount = depositAmount;
-        }
-
+        previousDepositAmount = this.totalSupply();
         uint reward = ((rewardPerShare - stakeAddressSnapshot[to]) * this.balanceOf(to)) / (STAKE_DENOMINATOR);
-
         rewardToken.safeTransfer(to, reward);
-
         stakeAddressSnapshot[to] = rewardPerShare;
-        claimedAmount += reward;
+
+        depositSnap = this.totalSupply();
+        balanceSnap = rewardToken.balanceOf(address(this));
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
-        if(from != address(this) && from != address(0) && to != address(0)) {
+        if (from != address(this) && from != address(0) && to != address(0)) {
             collectRewards(to);
         }
-    }
-
-    function usePool(address to, uint amount, uint fee) public { // FEE DENOMINATOR IS 100
-        require(this.balanceOf(to) >= amount, 'Not enough balance');
-        require(fee >= 5, 'Minimal fee is 5%');
     }
 }
