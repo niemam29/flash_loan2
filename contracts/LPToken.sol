@@ -4,69 +4,77 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol';
 import 'hardhat/console.sol';
 
-contract LPToken is ERC20, ERC20Burnable, Ownable {
-    using SafeERC20 for ERC20;
-    ERC20 tokenA;
-    uint totalTokenAmount;
-    uint stakeParameter;
-    address liquidityPoolAddress;
+contract LPToken is ERC20Wrapper, Ownable {
+    using SafeERC20 for IERC20;
+    IERC20 rewardToken;
+    uint rewardPerShare;
+    uint previousRewardBalance;
+    uint claimedAmount;
+    uint depositAmount;
+    uint previousDepositAmount;
     mapping(address => uint) public stakeAddressAmount;
     mapping(address => uint) public stakeAddressSnapshot;
 
-    uint constant STAKE_DENOMINATOR = 1000000;
+    uint constant STAKE_DENOMINATOR = 100000;
 
-    constructor(address _token, address _liquidityPool) ERC20('LPToken', 'LPT') {
-        stakeParameter = 0;
-        totalTokenAmount = 0;
-        tokenA = ERC20(_token);
-        liquidityPoolAddress = _liquidityPool;
+    constructor(IERC20 _token) ERC20Wrapper(_token) ERC20('LPToken', 'LPT') {
+        rewardPerShare = 0;
+        depositAmount = 0;
+        rewardToken = _token;
+        claimedAmount = 0;
+        previousDepositAmount = 0;
     }
 
-    function mintLPToken(address to, uint256 amount) public onlyOwner {
-        console.log('minting %s', amount);
-        _mint(to, amount);
-        stakeAddressAmount[to] = amount;
-        stakeAddressSnapshot[to] = totalTokenAmount;
-
-        totalTokenAmount += amount;
+    function depositFor(address account, uint256 amount) public override returns (bool) {
+        stakeAddressAmount[account] = amount;
+        stakeAddressSnapshot[account] = rewardPerShare;
+        depositAmount += amount;
+        super.depositFor(account, amount);
+        return true;
     }
 
-    function burnLPToken(address from, uint256 amount) public onlyOwner {
-        stakeAddressAmount[from] -= amount;
-        stakeAddressSnapshot[from] = totalTokenAmount;
-
-        totalTokenAmount -= amount;
-        console.log(amount);
-        console.log(balanceOf(address(this)));
-        burnFrom(from, amount);
+    function withdrawTo(address account, uint256 amount) public override returns (bool) {
+        super.withdrawTo(account, amount);
+        stakeAddressAmount[account] -= amount;
+        stakeAddressSnapshot[account] = rewardPerShare;
+        return true;
     }
+
 
     function distributeReward(uint reward) internal {
-        require(totalTokenAmount > 0, 'totalTokenAmount is zero');
-        console.log('reward: %s', reward);
-        console.log('totalTokenAmount: %s', totalTokenAmount);
-        console.log('st: %s', (5000 / totalTokenAmount));
-        stakeParameter = (((stakeParameter + reward) * STAKE_DENOMINATOR) / totalTokenAmount); // INVESTIGATE - 6 DECIMALS
-        console.log('stakeParameter: %s', stakeParameter);
+        require(this.totalSupply() > 0, 'this.totalSupply() is zero');
+        rewardPerShare += (reward * STAKE_DENOMINATOR) / this.totalSupply(); // INVESTIGATE - 6 DECIMALS
     }
 
     function collectRewards(address to) public {
-        uint reward = ((stakeParameter - stakeAddressSnapshot[to]) * ERC20.balanceOf(to)) / STAKE_DENOMINATOR;
+        if (previousDepositAmount == 0) {
+            previousDepositAmount = depositAmount;
+        }
 
-        require(stakeAddressAmount[to] == this.balanceOf(to), 'Stake amount invalid');
+        if((rewardToken.balanceOf(address(this)) > ( claimedAmount + previousDepositAmount))) {
+            distributeReward(rewardToken.balanceOf(address(this)) - claimedAmount - previousDepositAmount);
+            previousDepositAmount = depositAmount;
+        }
 
-        console.log('reward: %s', reward);
-        console.log('stake: %s', stakeParameter);
-        tokenA.safeTransfer(to, reward);
+        uint reward = ((rewardPerShare - stakeAddressSnapshot[to]) * this.balanceOf(to)) / (STAKE_DENOMINATOR);
 
-        stakeAddressSnapshot[to] = stakeParameter;
+        rewardToken.safeTransfer(to, reward);
+
+        stakeAddressSnapshot[to] = rewardPerShare;
+        claimedAmount += reward;
     }
 
-    function depositReward(uint256 amount) public onlyOwner {
-        tokenA.safeTransferFrom(msg.sender, address(this), amount);
-        distributeReward(amount);
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
+        if(from != address(this) && from != address(0) && to != address(0)) {
+            collectRewards(to);
+        }
+    }
+
+    function usePool(address to, uint amount, uint fee) public { // FEE DENOMINATOR IS 100
+        require(this.balanceOf(to) >= amount, 'Not enough balance');
+        require(fee >= 5, 'Minimal fee is 5%');
     }
 }
