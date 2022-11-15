@@ -47,13 +47,13 @@ contract LPToken is ERC20Wrapper, Ownable {
     }
 
     function collectRewards(address to) public {
-        uint rew = (rewardToken.balanceOf(address(this)) - this.totalSupply()) - (balanceSnap - depositSnap);
-        if (rew > 0) {
-            distributeReward(rew);
+        uint rewards = (rewardToken.balanceOf(address(this)) - this.totalSupply()) - (balanceSnap - depositSnap);
+        if (rewards > 0) {
+            distributeReward(rewards);
         }
         previousDepositAmount = this.totalSupply();
-        uint reward = ((rewardPerShare - stakeAddressSnapshot[to]) * this.balanceOf(to)) / (STAKE_DENOMINATOR);
-        rewardToken.safeTransfer(to, reward);
+        uint userReward = ((rewardPerShare - stakeAddressSnapshot[to]) * this.balanceOf(to)) / (STAKE_DENOMINATOR);
+        rewardToken.safeTransfer(to, userReward);
         stakeAddressSnapshot[to] = rewardPerShare;
 
         depositSnap = this.totalSupply();
