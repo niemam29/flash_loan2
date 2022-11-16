@@ -16,9 +16,9 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
     uint feeDenominator = 100; // 1% fee
     bool locked = false;
 
-    constructor(address _supportedToken) {
+    constructor(address _supportedToken, address _liquidityPool) {
         supportedToken = ERC20(_supportedToken);
-        liquidityPool = new LiquidityPool(supportedToken);
+        liquidityPool = LiquidityPool(_liquidityPool);
     }
 
     function flashLoan(
@@ -28,32 +28,29 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
         bytes calldata data
     ) external nonReentrant returns (bool) {
         require(token == address(supportedToken), 'Token not supported');
-        require(amount <= liquidityPool.maxLiquidity(), 'Not enough liquidity');
+        require(amount <= maxFlashFloan(address(supportedToken)), 'Not enough liquidity');
 
-        liquidityPool.useLiquidity(this, amount); //TODO Find better way to do this
-        supportedToken.safeTransferFrom(address (liquidityPool),address(receiver), amount);
+        supportedToken.safeTransferFrom(address(liquidityPool), address(this), amount);
 
         require(
             receiver.onFlashLoan(msg.sender, token, amount, feeDenominator, data) == expectedHash,
             'Flash loan failed'
         );
 
-        supportedToken.safeTransferFrom(address(receiver), liquidityPool.getToken(), amount + flashFee(token, amount));
+        supportedToken.safeTransferFrom(address(receiver), address(liquidityPool.lpToken()), flashFee(token, amount));
+        supportedToken.safeTransferFrom(address(receiver), address(liquidityPool), amount);
+
         return true;
     }
 
-    function maxFlashFloan(address token) external view returns (uint256) {
+    function maxFlashFloan(address token) public view returns (uint256) {
         require(token == address(supportedToken), 'Token not supported');
-        return liquidityPool.maxLiquidity();
+        return supportedToken.balanceOf(address(liquidityPool));
     }
 
     function flashFee(address token, uint256 amount) public view returns (uint256) {
         require(token == address(supportedToken), 'Token not supported');
         require(amount >= feeDenominator, 'Flash fee is not calculable - try bigger amount');
         return amount / feeDenominator;
-    }
-
-    function getLiquidityPool() public view returns (address) {
-        return address(liquidityPool);
     }
 }

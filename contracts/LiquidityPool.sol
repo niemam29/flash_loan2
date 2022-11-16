@@ -5,27 +5,45 @@ import './FlashLoan.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './interfaces/IERC3156FlashLender.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+
 contract LiquidityPool is Ownable {
-    IERC20 tokenA;
     using SafeERC20 for IERC20;
-    LPToken lpToken;
+    using SafeERC20 for LPToken;
+    LPToken public lpToken;
+    ERC20 rewardToken;
+    uint decimalDiff;
 
-    constructor(IERC20 _tokenA) {
-        tokenA = _tokenA;
-        lpToken = new LPToken(_tokenA);
-        lpToken.usePool(address(this), 2**256 - 1);
+    constructor(ERC20 _rewardToken) {
+        lpToken = new LPToken(_rewardToken);
+        rewardToken = _rewardToken;
+        decimalDiff = (_rewardToken.decimals() > ERC20(address(lpToken)).decimals())
+            ? _rewardToken.decimals() - ERC20(address(lpToken)).decimals()
+            : ERC20(address(lpToken)).decimals() - _rewardToken.decimals();
     }
 
-    function getToken() public view returns (address) {
-        return address(lpToken);
+    function deposit(uint amountInRewardToken) public {
+        if (rewardToken.decimals() > ERC20(address(lpToken)).decimals()) {
+            require(amountInRewardToken / 10 ** decimalDiff > 0, 'amount is too small');
+            lpToken.rewardToken().safeTransferFrom(msg.sender, address(this), amountInRewardToken);
+            lpToken.mint(msg.sender, amountInRewardToken / 10 ** decimalDiff);
+        } else {
+            lpToken.rewardToken().safeTransferFrom(msg.sender, address(this), amountInRewardToken);
+            lpToken.mint(msg.sender, amountInRewardToken * 10 ** decimalDiff);
+        }
     }
 
-    function useLiquidity(IERC3156FlashLender receiver, uint256 amount) public onlyOwner {
-        tokenA.transferFrom(address(lpToken), address(this), amount);
-        tokenA.approve(address(receiver), amount);
+    function withdraw(uint amountInRewardToken) public {
+        if (rewardToken.decimals() > ERC20(address(lpToken)).decimals()) {
+            require(amountInRewardToken / 10 ** decimalDiff > 0, 'amount is too small');
+            lpToken.burn(msg.sender, amountInRewardToken / (10 ** decimalDiff));
+            lpToken.rewardToken().safeTransfer(msg.sender, amountInRewardToken);
+        } else {
+            lpToken.burn(msg.sender, amountInRewardToken * (10 ** decimalDiff));
+            lpToken.rewardToken().safeTransfer(msg.sender, amountInRewardToken);
+        }
     }
 
-    function maxLiquidity() public view returns (uint256) {
-        return tokenA.balanceOf(address(lpToken));
+    function useLiquidity(address receiver) public onlyOwner {
+        SafeERC20.safeApprove(rewardToken, receiver, type(uint).max);
     }
 }

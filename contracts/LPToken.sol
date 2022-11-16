@@ -5,13 +5,11 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol';
-import 'hardhat/console.sol';
 
-contract LPToken is ERC20Wrapper, Ownable {
+contract LPToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
-    IERC20 rewardToken;
+    IERC20 public rewardToken;
     uint rewardPerShare;
-    uint depositSnap;
     uint balanceSnap;
     uint previousDepositAmount;
     mapping(address => uint) public stakeAddressAmount;
@@ -19,23 +17,23 @@ contract LPToken is ERC20Wrapper, Ownable {
 
     uint constant STAKE_DENOMINATOR = 100000;
 
-    constructor(IERC20 _token) ERC20Wrapper(_token) ERC20('LPToken', 'LPT') {
+    constructor(ERC20 _token) ERC20('LPToken', 'LPT') {
         rewardPerShare = 0;
         rewardToken = _token;
         previousDepositAmount = 0;
-        depositSnap = 0;
         balanceSnap = 0;
     }
 
-    function depositFor(address account, uint256 amount) public override returns (bool) {
+    function mint(address account, uint256 amount) public onlyOwner returns (bool) {
         stakeAddressAmount[account] += amount;
         stakeAddressSnapshot[account] = rewardPerShare;
-        super.depositFor(account, amount);
+        _mint(account, amount);
         return true;
     }
 
-    function withdrawTo(address account, uint256 amount) public override returns (bool) {
-        super.withdrawTo(account, amount);
+    function burn(address account, uint256 amount) public onlyOwner returns (bool) {
+        collectRewards(account);
+        _burn(account, amount);
         stakeAddressAmount[account] -= amount;
         stakeAddressSnapshot[account] = rewardPerShare;
         return true;
@@ -43,30 +41,28 @@ contract LPToken is ERC20Wrapper, Ownable {
 
     function distributeReward(uint reward) internal {
         require(this.totalSupply() > 0, 'this.totalSupply() is zero');
-        rewardPerShare += (reward * STAKE_DENOMINATOR) / this.totalSupply(); // INVESTIGATE - 6 DECIMALS
+        rewardPerShare += (reward * STAKE_DENOMINATOR) / this.totalSupply();
+        // INVESTIGATE - 6 DECIMALS
     }
 
     function collectRewards(address to) public {
-        uint rewards = (rewardToken.balanceOf(address(this)) - this.totalSupply()) - (balanceSnap - depositSnap);
+        uint rewards = (rewardToken.balanceOf(address(this)) - balanceSnap);
         if (rewards > 0) {
             distributeReward(rewards);
         }
+
         previousDepositAmount = this.totalSupply();
         uint userReward = ((rewardPerShare - stakeAddressSnapshot[to]) * this.balanceOf(to)) / (STAKE_DENOMINATOR);
         rewardToken.safeTransfer(to, userReward);
         stakeAddressSnapshot[to] = rewardPerShare;
 
-        depositSnap = this.totalSupply();
         balanceSnap = rewardToken.balanceOf(address(this));
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
-        if (from != address(this) && from != address(0) && to != address(0)) {
+        if (from != address(0) && to != address(0)) {
             collectRewards(to);
+            collectRewards(from);
         }
-    }
-
-    function usePool(address to, uint amount) external onlyOwner {
-        rewardToken.approve(to, amount);
     }
 }
