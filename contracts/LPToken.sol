@@ -42,7 +42,6 @@ contract LPToken is ERC20, Ownable {
     function distributeReward(uint reward) internal {
         require(this.totalSupply() > 0, 'this.totalSupply() is zero');
         rewardPerShare += (reward * STAKE_DENOMINATOR) / this.totalSupply();
-        // INVESTIGATE - 6 DECIMALS
     }
 
     function collectRewards(address to) public {

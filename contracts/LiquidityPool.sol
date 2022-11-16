@@ -15,6 +15,7 @@ contract LiquidityPool is Ownable {
 
     constructor(ERC20 _rewardToken) {
         lpToken = new LPToken(_rewardToken);
+        //Not sure if this is the right way to do it
         rewardToken = _rewardToken;
         decimalDiff = (_rewardToken.decimals() > ERC20(address(lpToken)).decimals())
             ? _rewardToken.decimals() - ERC20(address(lpToken)).decimals()
