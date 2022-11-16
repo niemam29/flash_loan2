@@ -12,7 +12,6 @@ contract LPToken is ERC20, Ownable {
     uint rewardPerShare;
     uint balanceSnap;
     uint previousDepositAmount;
-    mapping(address => uint) public stakeAddressAmount;
     mapping(address => uint) public stakeAddressSnapshot;
 
     uint constant STAKE_DENOMINATOR = 100000;
@@ -25,7 +24,6 @@ contract LPToken is ERC20, Ownable {
     }
 
     function mint(address account, uint256 amount) public onlyOwner returns (bool) {
-        stakeAddressAmount[account] += amount;
         stakeAddressSnapshot[account] = rewardPerShare;
         _mint(account, amount);
         return true;
@@ -34,7 +32,6 @@ contract LPToken is ERC20, Ownable {
     function burn(address account, uint256 amount) public onlyOwner returns (bool) {
         collectRewards(account);
         _burn(account, amount);
-        stakeAddressAmount[account] -= amount;
         stakeAddressSnapshot[account] = rewardPerShare;
         return true;
     }
