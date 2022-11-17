@@ -24,13 +24,11 @@ contract LPToken is ERC20, Ownable {
     }
 
     function mint(address account, uint256 amount) public onlyOwner returns (bool) {
-        stakeAddressSnapshot[account] = rewardPerShare;
         _mint(account, amount);
         return true;
     }
 
     function burn(address account, uint256 amount) public onlyOwner returns (bool) {
-        collectRewards(account);
         _burn(account, amount);
         stakeAddressSnapshot[account] = rewardPerShare;
         return true;
@@ -38,6 +36,7 @@ contract LPToken is ERC20, Ownable {
 
     function distributeReward(uint reward) internal {
         require(this.totalSupply() > 0, 'this.totalSupply() is zero');
+        balanceSnap += reward;
         rewardPerShare += (reward * STAKE_DENOMINATOR) / this.totalSupply();
     }
 
@@ -52,12 +51,14 @@ contract LPToken is ERC20, Ownable {
         rewardToken.safeTransfer(to, userReward);
         stakeAddressSnapshot[to] = rewardPerShare;
 
-        balanceSnap = rewardToken.balanceOf(address(this));
+        balanceSnap -= userReward;
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
-        if (from != address(0) && to != address(0)) {
+        if (to != address(0)) {
             collectRewards(to);
+        }
+        if (from != address(0)) {
             collectRewards(from);
         }
     }
