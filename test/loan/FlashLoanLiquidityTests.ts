@@ -29,7 +29,7 @@ describe('Borrowing Loans with lp - Regular borrower', function () {
         TokenA = await TokenAContract.deploy('TokenA', 'TKA', 18)
         LpToken = await LpTokenContract.deploy(TokenA.address)
         Pool = await PoolContract.deploy(TokenA.address, LpToken.address)
-        FlashLoan = await FlashLoanContract.deploy(TokenA.address, Pool.address)
+        FlashLoan = await FlashLoanContract.deploy(TokenA.address, Pool.address, LpToken.address)
         RegularBorrower = await RegularBorrowerContract.deploy(FlashLoan.address)
 
         await LpToken.transferOwnership(Pool.address)

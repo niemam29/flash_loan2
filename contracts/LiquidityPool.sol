@@ -1,6 +1,5 @@
 pragma solidity ^0.8.0;
 
-import './LPToken.sol';
 import './FlashLoan.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import './interfaces/IERC3156FlashLender.sol';
@@ -16,7 +15,6 @@ contract LiquidityPool is Ownable {
 
     constructor(ERC20 _rewardToken, address _lpToken) {
         lpToken = ILPToken(_lpToken);
-        //Not sure if this is the right way to do it
         rewardToken = _rewardToken;
         decimalDiff = (_rewardToken.decimals() > ERC20(address(lpToken)).decimals())
             ? _rewardToken.decimals() - ERC20(address(lpToken)).decimals()
