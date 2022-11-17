@@ -11,11 +11,15 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
     bytes32 constant expectedHash = keccak256('ERC3156FlashBorrower.onFlashLoan');
     using SafeERC20 for ERC20;
     ERC20 supportedToken;
+    address liquidityPool;
+    address lpToken;
     uint feeDenominator = 100; // 1% fee
     bool locked = false;
 
-    constructor(ERC20 _supportedToken) {
-        supportedToken = _supportedToken;
+    constructor(address _supportedToken, address _liquidityPool, address _lpToken) {
+        supportedToken = ERC20(_supportedToken);
+        liquidityPool = _liquidityPool;
+        lpToken = _lpToken;
     }
 
     function flashLoan(
@@ -25,21 +29,24 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
         bytes calldata data
     ) external nonReentrant returns (bool) {
         require(token == address(supportedToken), 'Token not supported');
+        require(amount <= maxFlashFloan(address(supportedToken)), 'Not enough liquidity');
 
-        supportedToken.safeTransfer(address(receiver), amount);
+        supportedToken.safeTransferFrom(liquidityPool, address(this), amount);
 
         require(
             receiver.onFlashLoan(msg.sender, token, amount, feeDenominator, data) == expectedHash,
             'Flash loan failed'
         );
 
-        supportedToken.safeTransferFrom(address(receiver), address(this), amount + flashFee(token, amount));
+        supportedToken.safeTransferFrom(address(receiver), lpToken, flashFee(token, amount));
+        supportedToken.safeTransferFrom(address(receiver), liquidityPool, amount);
+
         return true;
     }
 
-    function maxFlashFloan(address token) external view returns (uint256) {
+    function maxFlashFloan(address token) public view returns (uint256) {
         require(token == address(supportedToken), 'Token not supported');
-        return ERC20(token).balanceOf(address(this));
+        return supportedToken.balanceOf(liquidityPool);
     }
 
     function flashFee(address token, uint256 amount) public view returns (uint256) {

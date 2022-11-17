@@ -8,11 +8,9 @@ import '../../interfaces/IERC3156FlashLender.sol';
 contract RegularBorrower is IERC3156FlashBorrower {
     using SafeERC20 for IERC20;
     IERC3156FlashLender lender;
-    address receiver;
 
-    constructor(IERC3156FlashLender _lender, address _receiver) {
+    constructor(IERC3156FlashLender _lender) {
         lender = _lender;
-        receiver = _receiver;
     }
 
     function onFlashLoan(
@@ -22,7 +20,6 @@ contract RegularBorrower is IERC3156FlashBorrower {
         uint256 fee,
         bytes calldata data
     ) external override returns (bytes32) {
-        IERC20(token).safeTransfer(receiver, amount);
         return keccak256('ERC3156FlashBorrower.onFlashLoan');
     }
 
