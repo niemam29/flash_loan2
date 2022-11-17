@@ -27,11 +27,12 @@ describe('Borrowing Loans with lp - Regular borrower', function () {
         RegularBorrowerContract = await ethers.getContractFactory('RegularBorrower')
 
         TokenA = await TokenAContract.deploy('TokenA', 'TKA', 18)
-        Pool = await PoolContract.deploy(TokenA.address)
-        LpToken = await LpTokenContract.attach(await Pool.lpToken())
+        LpToken = await LpTokenContract.deploy(TokenA.address)
+        Pool = await PoolContract.deploy(TokenA.address, LpToken.address)
         FlashLoan = await FlashLoanContract.deploy(TokenA.address, Pool.address)
         RegularBorrower = await RegularBorrowerContract.deploy(FlashLoan.address)
 
+        await LpToken.transferOwnership(Pool.address)
         await Pool.useLiquidity(FlashLoan.address)
 
         await TokenA.transfer(user.address, 1000000)

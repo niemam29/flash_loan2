@@ -21,11 +21,13 @@ describe('Liquidity Pool tests - reward token with 24 decimals', function () {
         PoolContract = await ethers.getContractFactory('LiquidityPool')
 
         TokenA = await TokenAContract.deploy('TokenA', 'TKA', 24)
-        Pool = await PoolContract.deploy(TokenA.address)
-        LpToken = await LpTokenContract.attach(await Pool.lpToken())
+        LpToken = await LpTokenContract.deploy(TokenA.address)
+        Pool = await PoolContract.deploy(TokenA.address, LpToken.address)
 
-        TokenA.transfer(user.address, '1000000000000000000000000')
-        TokenA.connect(user).approve(Pool.address, '1000000000000000000000000')
+        await LpToken.transferOwnership(Pool.address)
+
+        await TokenA.transfer(user.address, '1000000000000000000000000')
+        await TokenA.connect(user).approve(Pool.address, '1000000000000000000000000')
     })
     it('Should deposit one token', async function () {
         await Pool.connect(user).deposit('1000000000000000000000000')
