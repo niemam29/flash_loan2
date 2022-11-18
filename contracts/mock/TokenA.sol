@@ -13,11 +13,14 @@ contract TokenA is ERC20, Ownable {
         tokenDecimals = desiredDecimals;
         tokenName = name;
         tokenSymbol = symbol;
-        _mint(msg.sender, 100000000000000000000 * 10 ** decimals());
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
+    }
+
+    function burn(address from, uint256 amount) public onlyOwner {
+        _burn(from, amount);
     }
 
     function decimals() public view virtual override returns (uint8) {
