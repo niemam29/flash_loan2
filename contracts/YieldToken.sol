@@ -76,7 +76,7 @@ contract YieldToken is ERC20, Ownable {
         }
     }
 
-    function setMiningRate(uint rate) public onlyOwner returns (bool) {
+    function setMintingRate(uint rate) public onlyOwner returns (bool) {
         totalSupplyWhenMintingRateWasSet += (block.number - startBlock) * mintingRate;
         mintingRate = rate;
         startBlock = block.number;
