@@ -39,7 +39,7 @@ describe('Yield token - single staking user', function () {
         expect(await YieldToken.balanceOf(diablo.address)).to.be.eq(1000697) // 3 blocks
     })
     it('Should split the minted tokens between holders', async function () {
-        await YieldToken.setMiningRate(10)
+        await YieldToken.setMintingRate(10)
         await YieldToken.claim(alwin.address)
         await YieldToken.claim(diablo.address)
         expect(await YieldToken.balanceOf(alwin.address)).to.be.eq(1000751) // 2 blocks
