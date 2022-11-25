@@ -13,12 +13,22 @@ contract LiquidityPool is Ownable {
     ERC20 rewardToken;
     uint decimalDiff;
 
+    event Deposit(
+        address indexed _from,
+        uint _valueRewardToken,
+        uint _valueLiquidityToken,
+        LiquidityPool indexed _pool
+    );
+    event Withdraw(address indexed _to, uint _valueRewardToken, uint _valueLiquidityToken, LiquidityPool indexed _pool);
+    event Pool(address indexed _tokenAAdress, address indexed _tokenBAdress, uint price, address indexed _poolAdress);
+
     constructor(ERC20 _rewardToken, address _lpToken) {
         lpToken = ILPToken(_lpToken);
         rewardToken = _rewardToken;
         decimalDiff = (_rewardToken.decimals() > ERC20(address(lpToken)).decimals())
             ? _rewardToken.decimals() - ERC20(address(lpToken)).decimals()
             : ERC20(address(lpToken)).decimals() - _rewardToken.decimals();
+        emit Pool(address(_rewardToken), address(_lpToken), 1, address(this));
     }
 
     function deposit(uint amountInRewardToken) public {
@@ -30,6 +40,8 @@ contract LiquidityPool is Ownable {
             lpToken.rewardToken().safeTransferFrom(msg.sender, address(this), amountInRewardToken);
             lpToken.mint(msg.sender, amountInRewardToken * 10 ** decimalDiff);
         }
+
+        emit Deposit(msg.sender, amountInRewardToken, amountInRewardToken * 10 ** decimalDiff, this);
     }
 
     function withdraw(uint amountInRewardToken) public {
@@ -41,9 +53,12 @@ contract LiquidityPool is Ownable {
             lpToken.burn(msg.sender, amountInRewardToken * (10 ** decimalDiff));
             lpToken.rewardToken().safeTransfer(msg.sender, amountInRewardToken);
         }
+        emit Withdraw(msg.sender, amountInRewardToken, amountInRewardToken / (10 ** decimalDiff), this);
     }
 
     function useLiquidity(address receiver) public onlyOwner {
         SafeERC20.safeApprove(rewardToken, receiver, type(uint).max);
     }
+
+    receive() external payable {}
 }
