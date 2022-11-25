@@ -62,4 +62,6 @@ contract LPToken is ERC20, Ownable {
             collectRewards(from);
         }
     }
+
+    receive() external payable {}
 }
