@@ -1,0 +1,30 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: LiquidityPool
+    network: mainnet
+    source:
+      address: "0x60Bb892D3a05a223C0D2aC4F1E72C471080367B8"
+      abi: LiquidityPool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Deposit
+        - PoolDepositor
+        - Pool
+        - Withdraw
+      abis:
+        - name: LiquidityPool
+          file: ./abis/LiquidityPool.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256,uint256,indexed address)
+          handler: handleDeposit
+        - event: Pool(indexed address,indexed address,uint256,indexed address)
+          handler: handlePool
+        - event: Withdraw(indexed address,uint256,uint256,indexed address)
+          handler: handleWithdraw
+      file: ./src/liquidity-pool.ts
