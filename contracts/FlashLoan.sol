@@ -54,4 +54,6 @@ contract FlashLoan is IERC3156FlashLender, ReentrancyGuard {
         require(amount >= feeDenominator, 'Flash fee is not calculable - try bigger amount');
         return amount / feeDenominator;
     }
+
+    receive() external payable {}
 }

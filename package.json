@@ -19,11 +19,14 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
     "@types/mocha-each": "^2.0.0",
+    "graphql": "^16.6.0",
+    "graphql-request": "^5.0.0",
     "lint": "^0.7.0"
   },
   "scripts": {
     "lint-fix": "eslint '**/*.ts' --fix",
     "solhint-fix": "solhint -f table contracts/**/*.sol",
-    "prettier-sol": "prettier --write contracts/**/*.sol"
+    "prettier-sol": "prettier --write contracts/**/*.sol",
+    "deploy": "hardhat run --network localhost scripts/deploy.ts"
   }
 }
