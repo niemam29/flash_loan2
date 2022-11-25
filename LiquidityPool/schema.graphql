@@ -1,7 +1,7 @@
 type Deposit @entity(immutable: true) {
   id: Bytes!
-  _valueRewardToken: BigInt! # uint256
-  _valueLiquidityToken: BigInt! # uint256
+  valueRewardToken: BigInt! # uint256
+  valueLiquidityToken: BigInt! # uint256
   pool: Pool! # address
   depositor: PoolDepositor!
 }
@@ -18,16 +18,16 @@ type PoolDepositor @entity(immutable: false) {
 
 type Pool @entity(immutable: true) {
   id: Bytes!
-  _tokenAAdress: Bytes! # address
-  _tokenBAdress: Bytes! # address
+  tokenAAdress: Bytes! # address
+  tokenBAdress: Bytes! # address
   price: BigInt! # uint256
 }
 
 type Withdraw @entity(immutable: true) {
   id: Bytes!
-  _to: Bytes! # address
-  _valueRewardToken: BigInt! # uint256
-  _valueLiquidityToken: BigInt! # uint256
-  _pool: Pool! # address
+  to: Bytes! # address
+  valueRewardToken: BigInt! # uint256
+  valueLiquidityToken: BigInt! # uint256
+  pool: Pool! # address
   depositor: PoolDepositor!
 }

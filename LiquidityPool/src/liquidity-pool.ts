@@ -7,8 +7,8 @@ import { Deposit, Pool, PoolDepositor, Withdraw } from '../generated/schema'
 
 export function handleDeposit(event: DepositEvent): void {
     const entity = new Deposit(event.transaction.hash.concatI32(event.logIndex.toI32()))
-    entity._valueRewardToken = event.params._valueRewardToken
-    entity._valueLiquidityToken = event.params._valueLiquidityToken
+    entity.valueRewardToken = event.params._valueRewardToken
+    entity.valueLiquidityToken = event.params._valueLiquidityToken
     entity.pool = event.params._pool
 
     let depositor = PoolDepositor.load(event.params._from)
@@ -31,8 +31,8 @@ export function handleDeposit(event: DepositEvent): void {
 
 export function handlePool(event: PoolEvent): void {
     const entity = new Pool(event.params._poolAdress)
-    entity._tokenAAdress = event.params._tokenAAdress
-    entity._tokenBAdress = event.params._tokenBAdress
+    entity.tokenAAdress = event.params._tokenAAdress
+    entity.tokenBAdress = event.params._tokenBAdress
     entity.price = event.params.price
 
     entity.save()
@@ -40,10 +40,10 @@ export function handlePool(event: PoolEvent): void {
 
 export function handleWithdraw(event: WithdrawEvent): void {
     const entity = new Withdraw(event.transaction.hash.concatI32(event.logIndex.toI32()))
-    entity._to = event.params._to
-    entity._valueRewardToken = event.params._valueRewardToken
-    entity._valueLiquidityToken = event.params._valueLiquidityToken
-    entity._pool = event.params._pool
+    entity.to = event.params._to
+    entity.valueRewardToken = event.params._valueRewardToken
+    entity.valueLiquidityToken = event.params._valueLiquidityToken
+    entity.pool = event.params._pool
     entity.depositor = event.params._to
 
     const depositor = PoolDepositor.load(event.params._to)!
