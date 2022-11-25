@@ -13,14 +13,9 @@ contract LiquidityPool is Ownable {
     ERC20 rewardToken;
     uint decimalDiff;
 
-    event Deposit(
-        address indexed _from,
-        uint _valueRewardToken,
-        uint _valueLiquidityToken,
-        LiquidityPool indexed _pool
-    );
-    event Withdraw(address indexed _to, uint _valueRewardToken, uint _valueLiquidityToken, LiquidityPool indexed _pool);
-    event Pool(address indexed _tokenAAdress, address indexed _tokenBAdress, uint price, address indexed _poolAdress);
+    event Deposit(address _from, uint _valueRewardToken, uint _valueLiquidityToken, LiquidityPool _pool);
+    event Withdraw(address _to, uint _valueRewardToken, uint _valueLiquidityToken, LiquidityPool _pool);
+    event Pool(address _tokenAAdress, address _tokenBAdress, uint price, address _poolAdress);
 
     constructor(ERC20 _rewardToken, address _lpToken) {
         lpToken = ILPToken(_lpToken);
