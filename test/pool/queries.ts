@@ -6,8 +6,8 @@ export function pools(): string {
             pools(first: 10) {
                 id
                 price
-                _tokenAAdress
-                _tokenBAdress
+                tokenAAdress
+                tokenBAdress
             }
         }
     `
@@ -18,8 +18,8 @@ export function deposits(): string {
         {
             deposits(first: 1) {
                 id
-                _valueLiquidityToken
-                _valueRewardToken
+                valueLiquidityToken
+                valueRewardToken
                 depositor {
                     id
                 }
@@ -32,10 +32,13 @@ export function withdraws(): string {
     return gql`
         {
             withdraws(first: 1) {
-                _to
-                _valueLiquidityToken
-                _valueRewardToken
+                to
+                valueLiquidityToken
+                valueRewardToken
                 depositor {
+                    id
+                }
+                pool {
                     id
                 }
             }

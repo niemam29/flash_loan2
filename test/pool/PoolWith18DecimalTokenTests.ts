@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { Contract } from 'ethers'
-import { request, gql, GraphQLClient } from 'graphql-request'
+import { request } from 'graphql-request'
 import { deposits, pools, withdraws } from './queries'
 
 let owner: SignerWithAddress,
@@ -35,7 +35,7 @@ describe('Liquidity Pool tests - reward token with 18 decimals', function () {
         await TokenA.transfer(user.address, '5000000000000000000')
         await TokenA.connect(user).approve(Pool.address, '5000000000000000000')
     })
-    it.only('Should return one pool', async function () {
+    it('Should return one pool', async function () {
         let t
         await request(url, pools()).then((data) => {
             console.log(data)
@@ -45,10 +45,10 @@ describe('Liquidity Pool tests - reward token with 18 decimals', function () {
         expect(t).to.have.length(1)
         expect(t[0].id).to.be.equal(POOL_ADDRESS.toLowerCase())
         expect(t[0].price).to.be.equal('1')
-        expect(t[0]._tokenAAdress).to.be.equal(TOKEN_A_ADDRESS.toLowerCase())
-        expect(t[0]._tokenBAdress).to.be.equal(LP_TOKEN_ADDRESS.toLowerCase())
+        expect(t[0].tokenAAdress).to.be.equal(TOKEN_A_ADDRESS.toLowerCase())
+        expect(t[0].tokenBAdress).to.be.equal(LP_TOKEN_ADDRESS.toLowerCase())
     })
-    it.only('Should deposit one token', async function () {
+    it('Should deposit one token', async function () {
         const t2 = await Pool.connect(user).deposit('2000000000000000000', { gasLimit: 5000000 })
         console.log(t2)
 
@@ -59,11 +59,11 @@ describe('Liquidity Pool tests - reward token with 18 decimals', function () {
         })
         expect(t).to.be.an('array')
         expect(t).to.have.length(1)
-        expect(t[0]._valueLiquidityToken).to.be.equal('2000000000000000000')
-        expect(t[0]._valueRewardToken).to.be.equal('2000000000000000000')
+        expect(t[0].valueLiquidityToken).to.be.equal('2000000000000000000')
+        expect(t[0].valueRewardToken).to.be.equal('2000000000000000000')
         expect(t[0].depositor.id).to.be.equal(user.address.toLowerCase())
     })
-    it.only('Should withdraw small fraction of user deposit', async function () {
+    it('Should withdraw small fraction of user deposit', async function () {
         LpToken.connect(user).approve(Pool.address, '1')
         await Pool.connect(user).withdraw('1')
 
@@ -74,12 +74,12 @@ describe('Liquidity Pool tests - reward token with 18 decimals', function () {
         })
         expect(t).to.be.an('array')
         expect(t).to.have.length(1)
-        expect(t[0]._valueLiquidityToken).to.be.equal('1')
-        expect(t[0]._valueRewardToken).to.be.equal('1')
+        expect(t[0].valueLiquidityToken).to.be.equal('1')
+        expect(t[0].valueRewardToken).to.be.equal('1')
         expect(t[0].depositor.id).to.be.equal(user.address.toLowerCase())
         expect(t[0].pool.id).to.be.equal(POOL_ADDRESS.toLowerCase())
     })
-    it.only('Should withdraw small fraction of user deposit', async function () {
+    it('Should withdraw small fraction of user deposit', async function () {
         LpToken.connect(user).approve(Pool.address, '1')
         await Pool.connect(user).withdraw('1')
 
@@ -90,8 +90,8 @@ describe('Liquidity Pool tests - reward token with 18 decimals', function () {
         })
         expect(t).to.be.an('array')
         expect(t).to.have.length(1)
-        expect(t[0]._valueLiquidityToken).to.be.equal('1')
-        expect(t[0]._valueRewardToken).to.be.equal('1')
+        expect(t[0].valueLiquidityToken).to.be.equal('1')
+        expect(t[0].valueRewardToken).to.be.equal('1')
         expect(t[0].depositor.id).to.be.equal(user.address.toLowerCase())
         expect(t[0].pool.id).to.be.equal(POOL_ADDRESS.toLowerCase())
     })
