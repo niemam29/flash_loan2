@@ -1,0 +1,3 @@
+FROM my-hardhat-env
+
+CMD ["npx", "hardhat", "test"]
